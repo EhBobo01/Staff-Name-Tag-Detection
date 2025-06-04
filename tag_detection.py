@@ -7,7 +7,7 @@ import subprocess
 st.sidebar.title("Name Tag Detection in Video")
 
 def convert_to_h264(input_path, output_path):
-    ffmpeg_path = r"C:\ffmpeg\bin\ffmpeg.exe"
+    ffmpeg_path = "ffmpeg"
     cmd = [
         ffmpeg_path,
         "-y",  # overwrite output if exists
