@@ -2,8 +2,27 @@ import os
 import streamlit as st
 import tempfile
 import cv2
+import subprocess
 
 st.sidebar.title("Name Tag Detection in Video")
+
+def convert_to_h264(input_path, output_path):
+    ffmpeg_path = "ffmpeg"
+    cmd = [
+        ffmpeg_path,
+        "-y",  # overwrite output if exists
+        "-i", input_path,
+        "-c:v", "libx264",
+        "-preset", "fast",
+        "-crf", "23",
+        output_path,
+    ]
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except Exception as e:
+        st.error(f"FFmpeg conversion failed: {e}")
+        return False
 
 def log_detections(frame_num, box, detection_log):
     x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -92,11 +111,14 @@ if uploaded_file:
         cap.release()
         out.release()
 
-        # Directly use the OpenCV output video without ffmpeg conversion
-        if os.path.exists(output_temp_path):
+        # Convert to H264 encoded MP4 for compatibility
+        output_final_path = os.path.join(tempfile.gettempdir(), "output_converted.mp4")
+        success = convert_to_h264(output_temp_path, output_final_path)
+
+        if success and os.path.exists(output_final_path):
             st.success(f"Detection complete! Processed {frame_count} frames with {detection_count} detections.")
-            st.video(output_temp_path)
-            with open(output_temp_path, "rb") as f:
+            st.video(output_final_path)
+            with open(output_final_path, "rb") as f:
                 st.download_button("Download Annotated Video", f, file_name="annotated_output.mp4", mime="video/mp4")
 
             # Show detection log as a dataframe
@@ -105,8 +127,8 @@ if uploaded_file:
                 st.table(detection_log)
             else:
                 st.info("No detections found in the video.")
-        else:
-            st.error("Annotated video not found.")
 
+        else:
+            st.error("Video conversion failed, cannot play annotated video.")
 else:
     st.info("Please upload a video to begin.")
