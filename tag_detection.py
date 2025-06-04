@@ -53,7 +53,7 @@ if uploaded_file:
             st.stop()
 
         try:
-            model = YOLO("runs/detect/train/weights/best.pt")
+            model = YOLO("model/best.pt")
             st.write("Model loaded successfully.")
         except Exception as e:
             st.error(f"Failed to load model weights: {e}")
